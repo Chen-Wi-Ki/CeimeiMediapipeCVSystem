@@ -7,9 +7,9 @@ from PIL import Image, ImageTk
 cap = cv2.VideoCapture(0)  # 開啟攝像頭，0代表預設攝像頭
 
 #cap.set(cv2.CAP_PROP_FPS, 4)
-cap.set(3,320)
-cap.set(4,480)
-cap.set(5,5)
+cap.set(3,1280)
+cap.set(4,720)
+cap.set(5,12)
 
 a = 0
 b = 0
@@ -18,11 +18,11 @@ c = 0
 # 初始化Tkinter視窗
 root = tk.Tk()
 root.title("手術縫合偵測")
-root.geometry("320x480")
+root.geometry("1280x720")
 #root.overrideredirect(True) #全螢幕設置,配合自啟動程式使用
 
 # 建立用於顯示影像的Label
-label = tk.Label(root, width=320, height=480)
+label = tk.Label(root, width=1280, height=720)
 label.pack()
 
 mp_hands = mp.solutions.hands
@@ -96,7 +96,7 @@ def update_image():
     
     ret, frame = cap.read()
     frame = cv2.flip(frame, 0)
-    frame = cv2.resize(frame,(320,480))
+    frame = cv2.resize(frame,(1280,720))
     if not ret:
         print("無法讀取影像")
         return
