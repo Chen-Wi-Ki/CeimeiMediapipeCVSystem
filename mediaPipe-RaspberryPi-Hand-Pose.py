@@ -16,11 +16,12 @@ mp_hands = mp. solutions . hands
 cap = cv2. VideoCapture(0)
 
 cap.set(3,320)
-cap.set(4,240)
+cap.set(4,480)
+cap.set(5,8)
 
 with mp_hands. Hands (
     static_image_mode = False,
-    max_num_hands = 2,
+    max_num_hands = 1,
     min_detection_confidence = 0.5 ) as hands:
     while True:
         ret, frame = cap.read()
@@ -39,10 +40,10 @@ with mp_hands. Hands (
                     mp_drawing.DrawingSpec(color=(0,255,255), thickness=3, circle_radius=5),
                     mp_drawing.DrawingSpec(color=(255,0,255), thickness=4, circle_radius=5))
 
+        cv2.namedWindow('Frame',cv2.WND_PROP_FULLSCREEN,)
+        cv2.setWindowProperty('Frame',cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('Frame',frame)
-        if cv2.waitKey(1) & 0xFF == 27:
+        if cv2.waitKey(1) & 0xFF == 27: #ESC鍵跳出
             break
 cap.release()
 cv2.destroyAllWindows()
-
-#---------------------------------------support@make2explore.com-------------------------------#
