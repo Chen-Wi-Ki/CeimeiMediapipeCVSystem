@@ -11,9 +11,17 @@ mp_hands = mp.solutions.hands #mediapipe手部API
 from gpiozero import Button, RGBLED
 led = RGBLED(red=26,green=19,blue=13) #RGD LED設定
 button = Button(12) #按鍵設定
+button_Flag1=False #這也作為recTimeFlag
 
 import threading
 thread_Flag1 = True #用於判斷是否結束所有迴圈
+
+import time
+show_Result_flag=False #顯示結果的Flag
+recTime = 60 #sec
+showResultTime=5 #sec
+#Message_Result='not good...'
+Message_Result='Exellent!!!'
 
 import numpy as np
 x = 0
@@ -49,28 +57,6 @@ def angle_x_y_z(a, b, c):
 
     return xangle[0],yangle[1], zangle[2]
 
-def TextInPicture(image ,text,position,font_color,font_scale = 1.7,gray=10,gray_y=0):
-
-    # 文字顏色和字型設置
-    font = cv2.FONT_HERSHEY_SIMPLEX
-
-    thickness = 1  # 文字線寬
-    # 在影像上繪製文字
-
-    # 獲取文字的大小
-    text_size, _ = cv2.getTextSize(text, font, font_scale, thickness)
-
-    # 添加半透明灰色背景
-    alpha = 0  # 背景的透明度，可自行調整 0.7
-    overlay = image.copy()
-
-    x, y = position
-    width, height = text_size[0], text_size[1] + gray
-    cv2.rectangle(overlay, (x, gray_y), (x + width, 0 + height), (60, 60, 60), -1)
-
-    cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0, image)
-    cv2.putText(image, text, position, font, font_scale, font_color, thickness)
-
 def Cumulative_calculation(value):
     global cal_array
     total_difference = 0
@@ -88,6 +74,15 @@ def calculate_differences_and_sum(data):
         differences[i - 1] = data[i] - data[i - 1]
     total_difference = sum(differences)
     return total_difference
+
+def btn_release():
+    global button_Flag1
+    button_Flag1=(not button_Flag1)
+    if button_Flag1==True:
+        led.color=(1,0,0)
+    else:
+        led.color=(0,1,0)
+    time.sleep(0.2)
 
 #----------------#
 #主呼叫由這裡開始#
@@ -154,6 +149,11 @@ def Run_Mediapipe():
                                               (0, 255, 255), 1, cv2.LINE_AA)
             cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1,
                                               (0, 255, 255), 1, cv2.LINE_AA)
+            global show_Result_flag,Message_Result
+            if show_Result_flag!=True:
+                cv2.putText(frame, Message_Result, (30, 240), cv2.FONT_HERSHEY_PLAIN,3,
+                                                  (0, 255, 0), 2, cv2.LINE_AA)
+
             cv2.namedWindow('Frame',cv2.WND_PROP_FULLSCREEN,)
             cv2.setWindowProperty('Frame',cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
             cv2.imshow('Frame',frame)
@@ -168,15 +168,11 @@ def Run_BtnAndLed():
     global thread_Flag1
     led.color=(0,1,0) #亮綠色
     while (thread_Flag1):
-        if button.is_pressed:
-                led.color=(1,0,0)
-                #print("Button is pressed")
-        else:
-                led.color=(0,1,0)
-                #print("Button is not pressed")
+        button.wait_for_release()
     led.color=(0,0,0)
 
 if __name__ == '__main__':
+    button.when_released = btn_release
     thread_Mediapipe = threading.Thread(target=Run_Mediapipe)  # 執行緒1:Mediapipe
     thread_BtnLed = threading.Thread(target=Run_BtnAndLed)     # 執行緒2:按鈕與LED控制
     thread_Mediapipe.start()
