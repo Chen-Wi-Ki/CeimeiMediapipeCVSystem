@@ -1,0 +1,36 @@
+#若本機未安裝Git則執行:
+sudo apt-get install git
+
+#存取遠端git庫(依本庫作範例)
+git clone https://github.com/Chenwici/RPi4-JD-IoT-SystemCode.git
+	-它會要求github的帳號與'令牌密碼'(這是github生成的密碼,非帳密)
+
+設定Git使用者名稱:(無設定會無法使用commit)
+git config --global user.name "<Your name>"
+
+設定Git使用者E-mail:(無設定會無法使用commit)
+git config --global user.email "<Your Email>"
+
+#查看全局資料
+ls -l
+
+#依遠端來更新本地的資料
+git pull
+
+#將文件加入追蹤
+git add
+
+#目前所在目錄下的所有檔案 (包含子目錄) 加入追蹤
+git add .
+
+#將所有以「.py」結尾的檔案 (不包含子目錄) 加入追蹤
+git add *.py
+
+#查看目前需追蹤的檔案狀態(未追蹤前/追蹤後/上傳遠端git後都會需要查看)
+git status -sb
+
+#若已經加完追蹤項目,才可執行交提動作
+git commit -m "寫你想寫的交提概要"
+
+#若以交提完本地端,才可執行同步遠端Git的動作
+git push
