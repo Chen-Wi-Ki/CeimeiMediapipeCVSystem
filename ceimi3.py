@@ -1,33 +1,46 @@
 import cv2
-import mediapipe as mp
-import numpy as np
-import tkinter as tk
-from PIL import Image, ImageTk
-from gpiozero import RGBLED
-cap = cv2.VideoCapture(0)  # 開啟攝像頭，0代表預設攝像頭
-
+cap = cv2.VideoCapture(0)
 cap.set(3,320)
 cap.set(4,480)
-cap.set(5,6)
+cap.set(5,8)
 
+import mediapipe as mp
+mp_drawing = mp.solutions.drawing_utils #mediapipe圖形繪製API
+mp_hands = mp.solutions.hands #mediapipe手部API
+
+from gpiozero import Button, RGBLED
+led = RGBLED(red=26,green=19,blue=13) #RGD LED設定
+button = Button(12) #按鍵設定
+button_Flag1=False #這也作為recTimeFlag
+
+import threading
+thread_Flag1 = True #用於判斷是否結束所有迴圈
+
+import time
+show_Result_flag=False #顯示結果的Flag
+recTime = 60 #sec
+showResultTime=5 #sec
+Message_Result_Fail='  Fail...'
+Message_Result_Good='  Good'
+Message_Result_Exel='Exellent!!!'
+Exel_or_Fail = 0
+Exel_or_Fail_countFlag=False
+
+import numpy as np
 a = 0
 b = 0
 c = 0
+x = 0
+y = 0
+z = 0
+xx= 0
+yy= 0
+zz= 0
 cal_array=[]
-
-# 初始化Tkinter視窗
-root = tk.Tk()
-root.title("手術縫合偵測")
-root.geometry("320x480")
-#root.overrideredirect(True) #全螢幕設置,配合自啟動程式使用
-
-# 建立用於顯示影像的Label
-label = tk.Label(root, width=320, height=480)
-label.pack()
-
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, min_detection_confidence=0.2,min_tracking_confidence=0.2)
-
+'''#中文字體
+from PIL import ImageFont, ImageDraw, Image
+font = ImageFont.truetype('TaipeiSansTCBeta-Regular.ttf', 5)      # 設定字型與文字大小
+'''
 def angle(a, b, c):
     vector1 = np.array(a) - np.array(b)
     vector2 = np.array(c) - np.array(b)
@@ -53,28 +66,6 @@ def angle_x_y_z(a, b, c):
 
     return xangle[0],yangle[1], zangle[2]
 
-def TextInPicture(image ,text,position,font_color,font_scale = 1.7,gray=10,gray_y=0):
-
-    # 文字顏色和字型設置
-    font = cv2.FONT_HERSHEY_SIMPLEX
-
-    thickness = 1  # 文字線寬
-    # 在影像上繪製文字
-
-    # 獲取文字的大小
-    text_size, _ = cv2.getTextSize(text, font, font_scale, thickness)
-
-    # 添加半透明灰色背景
-    alpha = 0  # 背景的透明度，可自行調整 0.7
-    overlay = image.copy()
-
-    x, y = position
-    width, height = text_size[0], text_size[1] + gray
-    cv2.rectangle(overlay, (x, gray_y), (x + width, 0 + height), (60, 60, 60), -1)
-
-    cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0, image)
-    cv2.putText(image, text, position, font, font_scale, font_color, thickness)
-
 def Cumulative_calculation(value):
     global cal_array
     total_difference = 0
@@ -93,134 +84,178 @@ def calculate_differences_and_sum(data):
     total_difference = sum(differences)
     return total_difference
 
+def btn_release():
+    global button_Flag1, show_Result_flag, Exel_or_Fail, Exel_or_Fail_countFlag
+    global a,b,c
+    button_Flag1=(not button_Flag1)
+    if button_Flag1==True:
+        led.color=(1,0,0)
+        Exel_or_Fail = 0
+        a = 0
+        b = 0
+        c = 0
+        Exel_or_Fail_countFlag = True
+        for i in range(0,60,1):
+            time.sleep(1)
+            if i==45:
+                led.color=(0.4,0,0)
+            elif i==50:
+                led.color=(0.15,0,0)
+            elif i==55:
+                led.color=(0.05,0,0)
+        show_Result_flag = True
+        Exel_or_Fail_countFlag = False
+        if Exel_or_Fail >=5:
+            for i in range(0,10,1):
+                led.color=(0,0,0)
+                time.sleep(0.3)
+                led.color=(0,1,0)
+                time.sleep(0.3)
+        else:
+            for i in range(0,10,1):
+                led.color=(0,0,0)
+                time.sleep(0.3)
+                led.color=(1,0,0)
+                time.sleep(0.3)
+        led.color=(0,1,0)
+        show_Result_flag = False
+        button_Flag1=(not button_Flag1)
+    time.sleep(0.1)
 
-the_massage = ""
-the_massage5 = "Times:"
+#----------------#
+#主呼叫由這裡開始#
+#----------------#
+def Run_Mediapipe():
+    global thread_Flag1, show_Result_flag, Exel_or_Fail
+    global Message_Result_Exel, Message_Result_Good, Message_Result_Fail
+    with mp_hands. Hands (
+        static_image_mode = False,
+        max_num_hands = 1,
+        min_detection_confidence = 0.4 ) as hands:
+        while True:
+            ret, frame = cap.read()
+            if ret == False:
+                break
+            height, width, _ = frame.shape
+            frame = cv2.flip(frame, 1)
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-hand_position =0
-sum_x = 0
-count = 0
-times = 0
+            results = hands.process(frame_rgb)
 
-led=RGBLED(red=26,green=19,blue=13)
+            if results.multi_hand_landmarks is not None:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    #顯示辨識
+                    #mp_drawing.draw_landmarks(
+                    #    frame, hand_landmarks, #mp_hands.HAND_CONNECTIONS,
+                    #    mp_drawing.DrawingSpec(color=(0,255,255), thickness=3,
+                    #                                           circle_radius=10),
+                    #    mp_drawing.DrawingSpec(color=(255,0,255), thickness=4,
+                    #                                           circle_radius=1)
+                    #)
+                    #判斷角度
+                    landmark_list = []
 
-xx=0
-yy=0
-zz=0
+                    for id, lm in enumerate(hand_landmarks.landmark):
+                        landmark_list.append([lm.x, lm.y, lm.z])
 
-def update_image():
-    global a, b, c
-    global the_massage
-    global the_massage2
-    global the_massage3
-    global the_massage4
-    global the_massage5
-    global hand_position
-    global sum_x ,count,times
+                    # 檢查是否取得了0、1和5這三個Landmark，如果有就進行計算
+                    if len(landmark_list) >= 6:
 
-    ret, frame = cap.read()
-    frame = cv2.flip(frame,0)
-    frame = cv2.resize(frame,(320,480))
-    if not ret:
-        print("無法讀取影像")
-        return
+                        positionx0, postitiony0, positionz0 = landmark_list[0]
+                        positionx9,postitiony9,positionz9= landmark_list[9]
+                        positionx = (positionx9+positionx0)/2.0
 
-    # 將影像轉換成RGB格式，因為Mediapipe使用的是RGB格式
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame_rgb = cv2.flip(frame_rgb,-1)
+                        landmark_2 = landmark_list[2]
+                        landmark_3 = landmark_list[3]
+                        landmark_5 = landmark_list[5]
 
-    # 使用Mediapipe來偵測手
-    results = hands.process(frame_rgb)
+                        global a,b,c
 
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
-            landmark_list = []
+                        x,y,z = angle_x_y_z(landmark_3, landmark_2, landmark_5)
+                        xx = Cumulative_calculation(x)
+                        yy = Cumulative_calculation(y)
+                        zz = Cumulative_calculation(z)
+                        '''
+                        if x>0:
+                            message1 = 'AngX='+str(int(x))+','+str(int(xx))+'^'
+                            Exel_or_Fail = Exel_or_Fail+1
+                        else:
+                            message1 = 'AngX='+str(int(x))+','+str(int(xx))+'v'
 
-            for id, lm in enumerate(hand_landmarks.landmark):
-                landmark_list.append([lm.x, lm.y, lm.z])
+                        if y>-5:
+                            message2 = 'AngY='+str(int(y))+','+str(int(yy))+'^'
+                        else:
+                            message2 = 'AngY='+str(int(y))+','+str(int(yy))+'v'
+                        '''
+                        if Exel_or_Fail_countFlag==True:
+                            if x > 1:
+                                a = 1
+                            else:
+                                b = 1
 
-            # 檢查是否取得了0、1和5這三個Landmark，如果有就進行計算
-            if len(landmark_list) >= 6:
+                            if a == 0 and b == 1:
+                                c = 1
 
-                positionx0, postitiony0, positionz0 = landmark_list[0]
-                positionx9,postitiony9,positionz9= landmark_list[9]
-                positionx = (positionx9+positionx0)/2.0
-                sum_x = sum_x + positionx
-                count = count+1
+                            if a == 1 and b == 0:
+                                c = 2
 
-                landmark_2 = landmark_list[2]
-                landmark_3 = landmark_list[3]
-                landmark_5 = landmark_list[5]
-                global xx,yy,zz
+                            if a == 1 and c == 1:
+                                a = 0
+                                b = 0
+                                c = 0
+                                Exel_or_Fail = Exel_or_Fail+1
 
-                x ,y,z = angle_x_y_z(landmark_3, landmark_2, landmark_5)
-                xx = Cumulative_calculation(x)
-                yy = Cumulative_calculation(y)
-                zz = Cumulative_calculation(z)
-
-                the_massage2 = "AngleX: " + str(int(x))+", "+ str(int(xx))
-                TextInPicture(frame_rgb, the_massage2, (0, 50), (50, 255, 50),font_scale=1,gray=50,gray_y=50)
-                the_massage3 = "AngleY: " +str(int(y))+", "+ str(int(yy))
-                TextInPicture(frame_rgb, the_massage3, (0,75),  (50, 255, 50),font_scale=1,gray=75,gray_y=50)
-                the_massage4 = "AngleZ:" +str(int(z))+", "+ str(int(zz))
-                TextInPicture(frame_rgb, the_massage4, (0,100), (50, 255, 50),font_scale=1,gray=100,gray_y=50)
-
-                # print(x,y,z)
-                if x > 1:
-                    a = 1
-                    # print("手心向上")
+                            if b == 1 and c == 2:
+                                a = 0
+                                b = 0
+                                c = 0
+                message1 = 'AngX='+str(int(x))+','+str(int(xx))
+                message2 = 'AngY='+str(int(y))+','+str(int(yy))
+                message3 = 'AngZ='+str(int(z))+','+str(int(zz))
+            else:
+                message1 = 'AngX dissonance'
+                message2 = 'AngY dissonance'
+                message3 = 'AngZ dissonance'
+            cv2.putText(frame, message1, (1, 30), cv2.FONT_HERSHEY_PLAIN,1,
+                                              (0, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, message2, (1, 60), cv2.FONT_HERSHEY_PLAIN,1,
+                                              (0, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1,
+                                              (0, 255, 255), 1, cv2.LINE_AA)
+            if show_Result_flag==True:
+                if Exel_or_Fail>=6:
+                    cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
+                    cv2.putText(frame, Message_Result_Exel, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
+                                                          (0, 255, 0), 3, cv2.LINE_AA)
+                elif Exel_or_Fail>=5:
+                    cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
+                    cv2.putText(frame, Message_Result_Good, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
+                                                          (0, 0, 255), 3, cv2.LINE_AA)
                 else:
-                    b = 1
-                    # print("手心向下")
+                    cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
+                    cv2.putText(frame, Message_Result_Fail, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
+                                                          (0, 0, 255), 3, cv2.LINE_AA)
 
-                if a == 0 and b == 1:
-                    c = 1
+            cv2.namedWindow('Frame',cv2.WND_PROP_FULLSCREEN,)
+            cv2.setWindowProperty('Frame',cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+            cv2.imshow('Frame',frame)
 
+            if cv2.waitKey(1) & 0xFF == 27: #ESC鍵跳出
+                thread_Flag1=False
+                break
+    cap.release()
+    cv2.destroyAllWindows()
 
-                if a == 1 and b == 0:
-                    c = 2
+def Run_BtnAndLed():
+    global thread_Flag1
+    led.color=(0,1,0) #亮綠色
+    while (thread_Flag1):
+        button.wait_for_release()
+    led.color=(0,0,0)
 
-
-                if a == 1 and c == 1:
-                    a = 0
-                    b = 0
-                    c = 0
-                    #the_massage = "Flip up"
-                    times = times+1
-                    the_massage5 = "Times: "+str(times)
-
-                if b == 1 and c == 2:
-                    a = 0
-                    b = 0
-                    c = 0
-
-                    #the_massage = "Flip down"
-    else:
-        the_massage2 = "AngleX:None"
-        the_massage3 = "AngleY:None"
-        the_massage4 = "AngleZ:None"
-        TextInPicture(frame_rgb, the_massage2, (0, 50), (50, 255, 50), font_scale=1,gray=25,gray_y=50)
-        TextInPicture(frame_rgb, the_massage3, (0, 75), (50, 255, 50), font_scale=1,gray=25,gray_y=50)
-        TextInPicture(frame_rgb, the_massage4, (0, 100), (50, 255, 50), font_scale=1,gray=25,gray_y=50)
-
-    TextInPicture(frame_rgb, the_massage5, (0, 25), (50, 255, 50),font_scale = 1)
-
-
-    # 更新Tkinter視窗中的影像
-    image = Image.fromarray(frame_rgb)
-    photo = ImageTk.PhotoImage(image=image)
-    label.config(image=photo)
-    label.image = photo
-    # 循環呼叫更新
-    root.after(6, update_image)
-
-
-# 開始更新影像和訊息
-update_image()
-
-# 啟動Tkinter主迴圈
-root.mainloop()
-
-# 釋放攝像頭資源
-cv2.destroyAllWindows()
-cap.release()
+if __name__ == '__main__':
+    button.when_released = btn_release
+    thread_Mediapipe = threading.Thread(target=Run_Mediapipe)  # 執行緒1:Mediapipe
+    thread_BtnLed = threading.Thread(target=Run_BtnAndLed)     # 執行緒2:按鈕與LED控制
+    thread_Mediapipe.start()
+    thread_BtnLed.start()
