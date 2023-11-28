@@ -20,8 +20,9 @@ import time
 show_Result_flag=False #顯示結果的Flag
 recTime = 60 #sec
 showResultTime=5 #sec
-#Message_Result='not good...'
-Message_Result='Exellent!!!'
+Message_Result_Fail='  Fail...'
+Message_Result_Exel='Exellent!!!'
+Exel_or_Fail = True
 
 import numpy as np
 x = 0
@@ -31,6 +32,10 @@ xx= 0
 yy= 0
 zz= 0
 cal_array=[]
+
+from PIL import ImageFont, ImageDraw, Image
+fontpath = 'NotoSansTC-Regular.otf'          # 中文字型路徑
+font = ImageFont.truetype(fontpath, 5)      # 設定字型與文字大小
 
 def angle(a, b, c):
     vector1 = np.array(a) - np.array(b)
@@ -136,8 +141,17 @@ def Run_Mediapipe():
                         xx = Cumulative_calculation(x)
                         yy = Cumulative_calculation(y)
                         zz = Cumulative_calculation(z)
-                message1 = 'AngX='+str(int(x))+','+str(int(xx))
-                message2 = 'AngY='+str(int(y))+','+str(int(yy))
+                        if x>0:
+                            message1 = 'AngX='+str(int(x))+','+str(int(xx))+'▲'
+                        else:
+                            message1 = 'AngX='+str(int(x))+','+str(int(xx))+'▼'
+
+                        if y>0:
+                            message2 = 'AngY='+str(int(y))+','+str(int(yy))+'▼'
+                        else:
+                            message2 = 'AngY='+str(int(y))+','+str(int(yy))+'▲'
+                #message1 = 'AngX='+str(int(x))+','+str(int(xx))
+                #message2 = 'AngY='+str(int(y))+','+str(int(yy))
                 message3 = 'AngZ='+str(int(z))+','+str(int(zz))
             else:
                 message1 = 'AngX dissonance'
@@ -149,10 +163,16 @@ def Run_Mediapipe():
                                               (0, 255, 255), 1, cv2.LINE_AA)
             cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1,
                                               (0, 255, 255), 1, cv2.LINE_AA)
-            global show_Result_flag,Message_Result
+            global show_Result_flag, Exel_or_Fail, Message_Result_Exel, Message_Result_Fail
             if show_Result_flag!=True:
-                cv2.putText(frame, Message_Result, (30, 240), cv2.FONT_HERSHEY_PLAIN,3,
-                                                  (0, 255, 0), 2, cv2.LINE_AA)
+                if Exel_or_Fail==True:
+                    cv2.rectangle(frame, (0, 185), (360, 250), (255, 255, 255), -1)
+                    cv2.putText(frame, Message_Result_Exel, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
+                                                          (0, 255, 0), 3, cv2.LINE_AA)
+                else:
+                    cv2.rectangle(frame, (0, 185), (360, 250), (255, 255, 255), -1)
+                    cv2.putText(frame, Message_Result_Fail, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
+                                                          (0, 0, 255), 3, cv2.LINE_AA)
 
             cv2.namedWindow('Frame',cv2.WND_PROP_FULLSCREEN,)
             cv2.setWindowProperty('Frame',cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
