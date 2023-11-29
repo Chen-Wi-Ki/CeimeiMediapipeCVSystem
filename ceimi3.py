@@ -25,19 +25,24 @@ Message_Result_Good='  Good'
 Message_Result_Exel='Exellent!!!'
 Exel_or_Fail = 0
 Exel_or_Fail_countFlag=False
+Show321_flag=False
+Message_Show321=' '
 
 import numpy as np
 a = 0
 b = 0
 c = 0
 x = 0
+xxx=0
 y = 0
+yyy=0
 z = 0
+zzz=0
 xx= 0
 yy= 0
 zz= 0
 cal_array=[]
-'''#中文字體
+'''#中文字體,暫時不需要
 from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype('TaipeiSansTCBeta-Regular.ttf', 5)      # 設定字型與文字大小
 '''
@@ -70,7 +75,7 @@ def Cumulative_calculation(value):
     global cal_array
     total_difference = 0
     cal_array = cal_array + [value]
-    if len(cal_array) == 7:
+    if len(cal_array) == 8:
         total_difference = calculate_differences_and_sum(cal_array)
         cal_array = []
     return total_difference
@@ -85,7 +90,7 @@ def calculate_differences_and_sum(data):
     return total_difference
 
 def btn_release():
-    global button_Flag1, show_Result_flag, Exel_or_Fail, Exel_or_Fail_countFlag
+    global button_Flag1, show_Result_flag, Exel_or_Fail, Exel_or_Fail_countFlag, Show321_flag, Message_Show321
     global a,b,c
     button_Flag1=(not button_Flag1)
     if button_Flag1==True:
@@ -94,13 +99,26 @@ def btn_release():
         a = 0
         b = 0
         c = 0
+
+        Show321_flag = True
+        Message_Show321='  3'
+        time.sleep(1)
+        Message_Show321='  2'
+        time.sleep(1)
+        Message_Show321='  1'
+        time.sleep(1)
+        Message_Show321='Start'
+        time.sleep(1)
+        Message_Show321=' '
+        Show321_flag=False
+
         Exel_or_Fail_countFlag = True
         for i in range(0,60,1):
             time.sleep(1)
             if i==45:
                 led.color=(0.4,0,0)
             elif i==50:
-                led.color=(0.15,0,0)
+                led.color=(0.25,0,0)
             elif i==55:
                 led.color=(0.05,0,0)
         show_Result_flag = True
@@ -131,7 +149,7 @@ def Run_Mediapipe():
     with mp_hands. Hands (
         static_image_mode = False,
         max_num_hands = 1,
-        min_detection_confidence = 0.4 ) as hands:
+        min_detection_confidence = 0.5 ) as hands:
         while True:
             ret, frame = cap.read()
             if ret == False:
@@ -144,13 +162,12 @@ def Run_Mediapipe():
 
             if results.multi_hand_landmarks is not None:
                 for hand_landmarks in results.multi_hand_landmarks:
+                 
                     #顯示辨識
                     #mp_drawing.draw_landmarks(
-                    #    frame, hand_landmarks, #mp_hands.HAND_CONNECTIONS,
-                    #    mp_drawing.DrawingSpec(color=(0,255,255), thickness=3,
-                    #                                           circle_radius=10),
-                    #    mp_drawing.DrawingSpec(color=(255,0,255), thickness=4,
-                    #                                           circle_radius=1)
+                       #frame, hand_landmarks, mp_hands.HAND_CONNECTIONS,
+                       # mp_drawing.DrawingSpec(color=(255,50,255), thickness=2, circle_radius=1),
+                       # mp_drawing.DrawingSpec(color=(200,160,200), thickness=1, circle_radius=1)
                     #)
                     #判斷角度
                     landmark_list = []
@@ -168,25 +185,29 @@ def Run_Mediapipe():
                         landmark_2 = landmark_list[2]
                         landmark_3 = landmark_list[3]
                         landmark_5 = landmark_list[5]
+                        #cv2.circle(frame, (landmark_2[0],landmark_2[1]), 0, (0, 0, 255), -l)
+                        #cv2.circle(frame, (landmark_3[0],landmark_3[1]), 0, (0, 0, 255), -l)
+                        #cv2.circle(frame, (landmark_5[0],landmark_5[1]), 0, (0, 0, 255), -l)
 
-                        global a,b,c
+                        global a,b,c,xxx,yyy,zzz
 
                         x,y,z = angle_x_y_z(landmark_3, landmark_2, landmark_5)
                         xx = Cumulative_calculation(x)
                         yy = Cumulative_calculation(y)
                         zz = Cumulative_calculation(z)
-                        '''
-                        if x>0:
-                            message1 = 'AngX='+str(int(x))+','+str(int(xx))+'^'
-                            Exel_or_Fail = Exel_or_Fail+1
+                        if xx != 0:
+                            xxx = xx
                         else:
-                            message1 = 'AngX='+str(int(x))+','+str(int(xx))+'v'
+                            xx = xxx
+                        if yy != 0:
+                            yyy = yy
+                        else:
+                            yy = yyy
+                        if zz != 0:
+                            zzz = zz
+                        else:
+                            zz = zzz
 
-                        if y>-5:
-                            message2 = 'AngY='+str(int(y))+','+str(int(yy))+'^'
-                        else:
-                            message2 = 'AngY='+str(int(y))+','+str(int(yy))+'v'
-                        '''
                         if Exel_or_Fail_countFlag==True:
                             if x > 1:
                                 a = 1
@@ -209,19 +230,21 @@ def Run_Mediapipe():
                                 a = 0
                                 b = 0
                                 c = 0
+                 #左上顯示計算的手腕旋轉角度
                 message1 = 'AngX='+str(int(x))+','+str(int(xx))
                 message2 = 'AngY='+str(int(y))+','+str(int(yy))
                 message3 = 'AngZ='+str(int(z))+','+str(int(zz))
+
             else:
                 message1 = 'AngX dissonance'
                 message2 = 'AngY dissonance'
                 message3 = 'AngZ dissonance'
-            cv2.putText(frame, message1, (1, 30), cv2.FONT_HERSHEY_PLAIN,1,
-                                              (0, 255, 255), 1, cv2.LINE_AA)
-            cv2.putText(frame, message2, (1, 60), cv2.FONT_HERSHEY_PLAIN,1,
-                                              (0, 255, 255), 1, cv2.LINE_AA)
-            cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1,
-                                              (0, 255, 255), 1, cv2.LINE_AA)
+
+            cv2.putText(frame, message1, (1, 30), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, message2, (1, 60), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
+            if Show321_flag==True:
+                cv2.putText(frame, Message_Show321, (7, 320), cv2.FONT_HERSHEY_SIMPLEX,4,(0, 0, 255), 3, cv2.LINE_AA)
             if show_Result_flag==True:
                 if Exel_or_Fail>=6:
                     cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
@@ -230,7 +253,7 @@ def Run_Mediapipe():
                 elif Exel_or_Fail>=5:
                     cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
                     cv2.putText(frame, Message_Result_Good, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
-                                                          (0, 0, 255), 3, cv2.LINE_AA)
+                                                          (0, 255, 255), 3, cv2.LINE_AA)
                 else:
                     cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
                     cv2.putText(frame, Message_Result_Fail, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
