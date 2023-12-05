@@ -1,8 +1,13 @@
 import cv2
 cap = cv2.VideoCapture(0)
+#cap.setWindowProperty('None',cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cap.set(3,320)
 cap.set(4,480)
 cap.set(5,8)
+
+import pyautogui
+#s_w,s_h = pyautogui.size()
+pyautogui.moveTo(319,479)
 
 import mediapipe as mp
 mp_drawing = mp.solutions.drawing_utils #mediapipe圖形繪製API
