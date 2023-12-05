@@ -162,7 +162,6 @@ def Run_Mediapipe():
 
             if results.multi_hand_landmarks is not None:
                 for hand_landmarks in results.multi_hand_landmarks:
-                 
                     #顯示辨識
                     #mp_drawing.draw_landmarks(
                        #frame, hand_landmarks, mp_hands.HAND_CONNECTIONS,
@@ -185,10 +184,13 @@ def Run_Mediapipe():
                         landmark_2 = landmark_list[2]
                         landmark_3 = landmark_list[3]
                         landmark_5 = landmark_list[5]
-                        #cv2.circle(frame, (landmark_2[0],landmark_2[1]), 0, (0, 0, 255), -l)
-                        #cv2.circle(frame, (landmark_3[0],landmark_3[1]), 0, (0, 0, 255), -l)
-                        #cv2.circle(frame, (landmark_5[0],landmark_5[1]), 0, (0, 0, 255), -l)
-
+                        
+                        cv2.circle(frame, (int(landmark_2[0]*320),int(landmark_2[1]*480)), 5, (0, 0, 255), -1)
+                        cv2.circle(frame, (int(landmark_3[0]*320),int(landmark_3[1]*480)), 5, (0, 0, 255), -1)
+                        cv2.circle(frame, (int(landmark_5[0]*320),int(landmark_5[1]*480)), 5, (0, 0, 255), -1)
+                        cv2.line  (frame, (int(landmark_2[0]*320),int(landmark_2[1]*480)),(int(landmark_3[0]*320),int(landmark_3[1]*480)),(200,160,200),2)
+                        cv2.line  (frame, (int(landmark_2[0]*320),int(landmark_2[1]*480)),(int(landmark_5[0]*320),int(landmark_5[1]*480)),(200,160,200),2)
+                        
                         global a,b,c,xxx,yyy,zzz
 
                         x,y,z = angle_x_y_z(landmark_3, landmark_2, landmark_5)
@@ -230,19 +232,19 @@ def Run_Mediapipe():
                                 a = 0
                                 b = 0
                                 c = 0
-                 #左上顯示計算的手腕旋轉角度
-                message1 = 'AngX='+str(int(x))+','+str(int(xx))
-                message2 = 'AngY='+str(int(y))+','+str(int(yy))
-                message3 = 'AngZ='+str(int(z))+','+str(int(zz))
+                #左上顯示計算的手腕旋轉角度
+                #message1 = 'AngX='+str(int(x))+','+str(int(xx))
+                #message2 = 'AngY='+str(int(y))+','+str(int(yy))
+                #message3 = 'AngZ='+str(int(z))+','+str(int(zz))
 
-            else:
-                message1 = 'AngX dissonance'
-                message2 = 'AngY dissonance'
-                message3 = 'AngZ dissonance'
+            #else:
+                #message1 = 'AngX dissonance'
+                #message2 = 'AngY dissonance'
+                #message3 = 'AngZ dissonance'
 
-            cv2.putText(frame, message1, (1, 30), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
-            cv2.putText(frame, message2, (1, 60), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
-            cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
+            #cv2.putText(frame, message1, (1, 30), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
+            #cv2.putText(frame, message2, (1, 60), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
+            #cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
             if Show321_flag==True:
                 cv2.putText(frame, Message_Show321, (7, 320), cv2.FONT_HERSHEY_SIMPLEX,4,(0, 0, 255), 3, cv2.LINE_AA)
             if show_Result_flag==True:
