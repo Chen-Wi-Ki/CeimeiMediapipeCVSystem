@@ -3,7 +3,7 @@ cap = cv2.VideoCapture(0)
 #cap.setWindowProperty('None',cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cap.set(3,320)
 cap.set(4,480)
-cap.set(5,8)
+cap.set(5,5)
 
 import pyautogui
 #s_w,s_h = pyautogui.size()
@@ -80,7 +80,7 @@ def Cumulative_calculation(value):
     global cal_array
     total_difference = 0
     cal_array = cal_array + [value]
-    if len(cal_array) == 8:
+    if len(cal_array) == 5:
         total_difference = calculate_differences_and_sum(cal_array)
         cal_array = []
     return total_difference
