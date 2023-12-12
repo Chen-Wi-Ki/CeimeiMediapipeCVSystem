@@ -151,9 +151,8 @@ def btn_release():
         show_Result_flag = False
         button_Flag1=(not button_Flag1)
     time.sleep(0.1)
-    now = datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=8)))
-    now.ctime()
-    path = '/home/wiki/Documents/'+str(now.ctime())+'.txt'
+    now = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    path = '/home/wiki/Documents/'+now+'.csv'
     f = open(path, 'w')
     f.write(message_IntegralAng)
     f.close()
