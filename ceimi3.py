@@ -21,7 +21,7 @@ button_Flag1=False #這也作為recTimeFlag
 import threading
 thread_Flag1 = True #用於判斷是否結束所有迴圈
 
-import time
+import time ,datetime
 show_Result_flag=False #顯示結果的Flag
 recTime = 60 #sec
 showResultTime=5 #sec
@@ -30,6 +30,7 @@ Message_Result_Good='  Good'
 Message_Result_Exel='Exellent!!!'
 Exel_or_Fail = 0
 Exel_or_Fail_countFlag=False
+angRaw = False
 Show321_flag=False
 Message_Show321=' '
 
@@ -73,7 +74,6 @@ def angle_x_y_z(a, b, c):
     xangle = angle(ax, bx, cx)
     yangle = angle(ay, by, cy)
     zangle = angle(az, bz, cz)
-
     return xangle[0],yangle[1], zangle[2]
 
 def Cumulative_calculation(value):
@@ -96,7 +96,7 @@ def calculate_differences_and_sum(data):
 
 def btn_release():
     global button_Flag1, show_Result_flag, Exel_or_Fail, Exel_or_Fail_countFlag, Show321_flag, Message_Show321
-    global a,b,c
+    global a,b,c,x,y,z,xxx,yyy,zzz,angRaw,message_IntegralAng
     button_Flag1=(not button_Flag1)
     if button_Flag1==True:
         led.color=(1,0,0)
@@ -104,6 +104,9 @@ def btn_release():
         a = 0
         b = 0
         c = 0
+        xxx=0
+        yyy=0
+        zzz=0
 
         Show321_flag = True
         Message_Show321='  3'
@@ -118,6 +121,8 @@ def btn_release():
         Show321_flag=False
 
         Exel_or_Fail_countFlag = True
+        message_IntegralAng='AngX,AngY,AngZ'
+        angRaw = True
         for i in range(0,60,1):
             time.sleep(1)
             if i==45:
@@ -126,8 +131,10 @@ def btn_release():
                 led.color=(0.25,0,0)
             elif i==55:
                 led.color=(0.05,0,0)
+        angRaw=False
         show_Result_flag = True
         Exel_or_Fail_countFlag = False
+
         if Exel_or_Fail >=5:
             for i in range(0,10,1):
                 led.color=(0,0,0)
@@ -144,12 +151,19 @@ def btn_release():
         show_Result_flag = False
         button_Flag1=(not button_Flag1)
     time.sleep(0.1)
+    now = datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=8)))
+    now.ctime()
+    path = '/home/wiki/Documents/'+str(now.ctime())+'.txt'
+    f = open(path, 'w')
+    f.write(message_IntegralAng)
+    f.close()
+    time.sleep(0.1)
 
 #----------------#
 #主呼叫由這裡開始#
 #----------------#
 def Run_Mediapipe():
-    global thread_Flag1, show_Result_flag, Exel_or_Fail
+    global thread_Flag1, angRaw, show_Result_flag, Exel_or_Fail, message_IntegralAng
     global Message_Result_Exel, Message_Result_Good, Message_Result_Fail
     with mp_hands. Hands (
         static_image_mode = False,
@@ -196,7 +210,7 @@ def Run_Mediapipe():
                         cv2.line  (frame, (int(landmark_2[0]*320),int(landmark_2[1]*480)),(int(landmark_3[0]*320),int(landmark_3[1]*480)),(200,160,200),2)
                         cv2.line  (frame, (int(landmark_2[0]*320),int(landmark_2[1]*480)),(int(landmark_5[0]*320),int(landmark_5[1]*480)),(200,160,200),2)
                         
-                        global a,b,c,xxx,yyy,zzz
+                        global a,b,c,xx,yy,zz,xxx,yyy,zzz
 
                         x,y,z = angle_x_y_z(landmark_3, landmark_2, landmark_5)
                         xx = Cumulative_calculation(x)
@@ -250,9 +264,11 @@ def Run_Mediapipe():
             #cv2.putText(frame, message1, (1, 30), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
             #cv2.putText(frame, message2, (1, 60), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
             #cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
-            if Show321_flag==True:
+            if angRaw==True: #開啟角度積分紀錄
+                message_IntegralAng = message_IntegralAng+'\n'+str(int(xxx))+','+str(int(yyy))+','+str(int(zzz))
+            if Show321_flag==True: #秀321倒數
                 cv2.putText(frame, Message_Show321, (7, 320), cv2.FONT_HERSHEY_SIMPLEX,4,(0, 0, 255), 3, cv2.LINE_AA)
-            if show_Result_flag==True:
+            if show_Result_flag==True: #秀評分
                 if Exel_or_Fail>=6:
                     cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
                     cv2.putText(frame, Message_Result_Exel, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
