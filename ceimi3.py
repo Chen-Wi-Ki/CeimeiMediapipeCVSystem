@@ -264,7 +264,7 @@ def Run_Mediapipe():
             #cv2.putText(frame, message2, (1, 60), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
             #cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
             if angRaw==True: #開啟角度積分紀錄
-                message_IntegralAng = message_IntegralAng+'\n'+str(int(xxx))+','+str(int(yyy))+','+str(int(zzz))
+                message_IntegralAng = message_IntegralAng+'\n'+str(round(x,3))+','+str(round(y,3))+','+str(round(z,3))
             if Show321_flag==True: #秀321倒數
                 cv2.putText(frame, Message_Show321, (7, 320), cv2.FONT_HERSHEY_SIMPLEX,4,(0, 0, 255), 3, cv2.LINE_AA)
             if show_Result_flag==True: #秀評分
