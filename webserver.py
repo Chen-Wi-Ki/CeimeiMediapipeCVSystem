@@ -13,7 +13,7 @@ async def StartEvent(request):
     if all_file_name_len==0:
         return text("None Data")
     else:
-        TempReq='<!DOCTYPE html><html lang="en"><meta charset="UTF-8"><div>奇美手術縫合訓練系統資料集</div><br>'
+        TempReq='<!DOCTYPE html><meta charset="UTF-8"><div>奇美手術縫合訓練系統資料集</div><br>'
         for i in range(0,all_file_name_len,1):
             TempReq = TempReq+'<a href="/download?'+all_file_name[i]+'">'+all_file_name[i]+'</a><br>'
         return html(TempReq)
