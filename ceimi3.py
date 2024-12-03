@@ -13,6 +13,10 @@ import mediapipe as mp
 mp_drawing = mp.solutions.drawing_utils #mediapipe圖形繪製API
 mp_hands = mp.solutions.hands #mediapipe手部API
 
+from scipy.stats import pearsonr
+import math
+import numpy as np
+
 from gpiozero import Button, RGBLED
 led = RGBLED(red=26,green=19,blue=13) #RGD LED設定
 button = Button(12) #按鍵設定
@@ -52,6 +56,72 @@ cal_array=[]
 from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype('TaipeiSansTCBeta-Regular.ttf', 5)      # 設定字型與文字大小
 '''
+
+WangData = [
+-104.3742222,
+-99.07088889,
+-101.1907778,
+-95.03666667,
+-92.55988889,
+-93.20277778,
+-93.46666667,
+-95.367,
+-103.4347778,
+-100.1215556,
+-86.87044444,
+-83.20266667,
+-79.79244444,
+-81.19911111,
+-83.07488889,
+-85.58477778,
+-87.18666667,
+-83.11922222,
+-85.877,
+-5.171444444,
+31.95211111,
+-3.928111111,
+-93.124,
+-100.102,
+-98.86877778,
+-96.60788889,
+-100.9343333,
+-56.49411111,
+-57.13911111,
+-10.71877778,
+38.31733333,
+33.979,
+-2.196111111,
+-2.909666667,
+13.77377778,
+-3.476555556,
+14.97233333,
+14.97233333,
+14.97233333,
+14.97233333,
+-15.94911111,
+-16.03088889,
+-56.92533333,
+-13.82933333,
+-12.48722222,
+-52.39722222,
+-87.04444444,
+-99.61855556,
+-96.14022222,
+-96.15955556,
+-107.0137778,
+-106.9628889,
+-105.2387778,
+-107.4721111,
+-110.7262222,
+-106.5808889,
+-104.3718889,
+-105.1757778,
+-104.5035556,
+-105.225
+]
+
+AngArray=[]
+
 def angle(a, b, c):
     vector1 = np.array(a) - np.array(b)
     vector2 = np.array(c) - np.array(b)
@@ -96,7 +166,7 @@ def calculate_differences_and_sum(data):
 
 def btn_release():
     global button_Flag1, show_Result_flag, Exel_or_Fail, Exel_or_Fail_countFlag, Show321_flag, Message_Show321
-    global a,b,c,x,y,z,xxx,yyy,zzz,angRaw,message_IntegralAng
+    global a,b,c,x,y,z,xxx,yyy,zzz,angRaw,message_IntegralAng,AngArray
     button_Flag1=(not button_Flag1)
     if button_Flag1==True:
         led.color=(1,0,0)
@@ -156,12 +226,14 @@ def btn_release():
     f.write(message_IntegralAng)
     f.close()
     time.sleep(0.1)
+    AngArray=[]#比對數據歸零
+    time.sleep(0.1)
 
 #----------------#
 #主呼叫由這裡開始#
 #----------------#
 def Run_Mediapipe():
-    global thread_Flag1, angRaw, show_Result_flag, Exel_or_Fail, message_IntegralAng
+    global thread_Flag1, angRaw, show_Result_flag, Exel_or_Fail, message_IntegralAng, AngArray
     global Message_Result_Exel, Message_Result_Good, Message_Result_Fail
     with mp_hands. Hands (
         static_image_mode = False,
@@ -263,15 +335,18 @@ def Run_Mediapipe():
             #cv2.putText(frame, message2, (1, 60), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
             #cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
             if angRaw==True: #開啟角度積分紀錄
+                AngArray = AngArray.append(math.sqrt(x**2 + y**2 + z**2))
                 message_IntegralAng = message_IntegralAng+'\n'+str(round(x,3))+','+str(round(y,3))+','+str(round(z,3))
             if Show321_flag==True: #秀321倒數
                 cv2.putText(frame, Message_Show321, (7, 320), cv2.FONT_HERSHEY_SIMPLEX,4,(0, 0, 255), 3, cv2.LINE_AA)
             if show_Result_flag==True: #秀評分
-                if Exel_or_Fail>=6:
+                AngArray60 = AngArrayp[:60]
+                Exel_or_Fail, p_value = pearsonr(WangData, AngArray60)
+                if Exel_or_Fail>=0.6:
                     cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
                     cv2.putText(frame, Message_Result_Exel, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
                                                           (0, 255, 0), 3, cv2.LINE_AA)
-                elif Exel_or_Fail>=5:
+                elif Exel_or_Fail>=0.5:
                     cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
                     cv2.putText(frame, Message_Result_Good, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
                                                           (0, 255, 255), 3, cv2.LINE_AA)
