@@ -23,7 +23,7 @@ thread_Flag1 = True #用於判斷是否結束所有迴圈
 
 import time ,datetime
 show_Result_flag=False #顯示結果的Flag
-recTime = 60 #sec
+recTime = 30 #sec
 showResultTime=5 #sec
 Message_Result_Fail='  Fail...'
 Message_Result_Good='  Good'
@@ -123,14 +123,13 @@ def btn_release():
         Exel_or_Fail_countFlag = True
         message_IntegralAng='AngX,AngY,AngZ'
         angRaw = True
-        for i in range(0,60,1):
+        for i in range(0,recTime,1):
             time.sleep(1)
-            if i==45:
+            if i==recTime-10:
                 led.color=(0.4,0,0)
-            elif i==50:
+            elif i==recTime-4:
                 led.color=(0.25,0,0)
-            elif i==55:
-                led.color=(0.05,0,0)
+
         angRaw=False
         show_Result_flag = True
         Exel_or_Fail_countFlag = False
