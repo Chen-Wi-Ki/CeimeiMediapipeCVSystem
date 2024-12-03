@@ -119,7 +119,6 @@ WangData = [
 -104.5035556,
 -105.225
 ]
-
 AngArray=[]
 
 def angle(a, b, c):
@@ -226,7 +225,7 @@ def btn_release():
     f.write(message_IntegralAng)
     f.close()
     time.sleep(0.1)
-    AngArray=[]#比對數據歸零
+    AngArray=[]
     time.sleep(0.1)
 
 #----------------#
@@ -335,13 +334,14 @@ def Run_Mediapipe():
             #cv2.putText(frame, message2, (1, 60), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
             #cv2.putText(frame, message3, (1, 90), cv2.FONT_HERSHEY_PLAIN,1, (0, 255, 255), 1, cv2.LINE_AA)
             if angRaw==True: #開啟角度積分紀錄
-                AngArray = AngArray.append(math.sqrt(x**2 + y**2 + z**2))
+                AngArray.append((x + y + z)/3)
                 message_IntegralAng = message_IntegralAng+'\n'+str(round(x,3))+','+str(round(y,3))+','+str(round(z,3))
             if Show321_flag==True: #秀321倒數
                 cv2.putText(frame, Message_Show321, (7, 320), cv2.FONT_HERSHEY_SIMPLEX,4,(0, 0, 255), 3, cv2.LINE_AA)
             if show_Result_flag==True: #秀評分
-                AngArray60 = AngArrayp[:60]
+                AngArray60 = AngArray[:60]
                 Exel_or_Fail, p_value = pearsonr(WangData, AngArray60)
+                print('Score:',Exel_or_Fail)
                 if Exel_or_Fail>=0.6:
                     cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
                     cv2.putText(frame, Message_Result_Exel, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
