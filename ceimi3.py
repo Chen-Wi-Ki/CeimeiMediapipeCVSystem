@@ -14,6 +14,7 @@ mp_drawing = mp.solutions.drawing_utils #mediapipe圖形繪製API
 mp_hands = mp.solutions.hands #mediapipe手部API
 
 from scipy.stats import pearsonr
+from scipy.special import gamma
 import math
 import numpy as np
 
@@ -27,11 +28,12 @@ thread_Flag1 = True #用於判斷是否結束所有迴圈
 
 import time ,datetime
 show_Result_flag=False #顯示結果的Flag
-recTime = 30 #sec
+recTime = 15 #sec
 showResultTime=5 #sec
-Message_Result_Fail='  Fail...'
-Message_Result_Good='  Good'
-Message_Result_Exel='Exellent!!!'
+Message_Result_Fail=    '  Fail...'
+Message_Result_Good=    '  Good'
+Message_Result_VeryGood='Very Good!!'
+Message_Result_Exel=    'Exellent!!!'
 Exel_or_Fail = 0
 Exel_or_Fail_countFlag=False
 angRaw = False
@@ -195,10 +197,8 @@ def btn_release():
         angRaw = True
         for i in range(0,recTime,1):
             time.sleep(1)
-            if i==recTime-10:
-                led.color=(0.4,0,0)
-            elif i==recTime-4:
-                led.color=(0.25,0,0)
+            if i==recTime-5:
+                led.color=(0.3,0,0)
 
         angRaw=False
         show_Result_flag = True
@@ -344,18 +344,30 @@ def Run_Mediapipe():
                 AngArray60 = AngArray[:60]
                 #data2 = [AngArray60[i] - AngArray60[i - 1] for i in range(1, len(AngArray60))]
                 Exel_or_Fail, p_value = pearsonr(WangData, AngArray60)
-                print('Score:',Exel_or_Fail)
-                if Exel_or_Fail>=0.3:
-                    cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
-                    cv2.putText(frame, Message_Result_Exel, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
-                                                          (0, 255, 0), 3, cv2.LINE_AA)
-                elif Exel_or_Fail>=0.2:
-                    cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
-                    cv2.putText(frame, Message_Result_Good, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
-                                                          (0, 255, 255), 3, cv2.LINE_AA)
-                else:
+                #print('Score:',Exel_or_Fail)
+                if Exel_or_Fail<=0.1:
                     cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
                     cv2.putText(frame, Message_Result_Fail, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
+                                                          (0, 0, 255), 3, cv2.LINE_AA)
+                else:
+                    Gamma = gamma(Exel_or_Fail)
+                    Exel_or_Fail = Exel_or_Fail+Gamma*0.01
+                    #print('Score+Gamma*0.01=',Exel_or_Fail)
+                    if Exel_or_Fail>=0.4:
+                        cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
+                        cv2.putText(frame, Message_Result_Exel, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
+                                                          (0, 255, 0), 3, cv2.LINE_AA)
+                    elif Exel_or_Fail>=0.3:
+                        cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
+                        cv2.putText(frame, Message_Result_VeryGood, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
+                                                          (0, 255, 255), 3, cv2.LINE_AA)
+                    elif Exel_or_Fail>=0.2:
+                        cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
+                        cv2.putText(frame, Message_Result_Good, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
+                                                          (0, 255, 255), 3, cv2.LINE_AA)
+                    else:
+                        cv2.rectangle(frame, (0, 185), (360, 250), (255, 200, 0), cv2.FILLED)
+                        cv2.putText(frame, Message_Result_Fail, (14, 240), cv2.FONT_HERSHEY_SIMPLEX,2,
                                                           (0, 0, 255), 3, cv2.LINE_AA)
 
             cv2.namedWindow('Frame',cv2.WND_PROP_FULLSCREEN,)
